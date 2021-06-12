@@ -33,7 +33,7 @@ public class KeyboardHandler implements KeyListener {
         Event evt = new Event(WinRune.getInstance().gameApplet, 401, e);
         Integer converted = KeyboardMapHelper.convert(Integer.valueOf(e.getKeyCode()));
         Integer n =
-            Integer.valueOf(converted.intValue() == e.getExtendedKeyCode()
+            Integer.valueOf(converted.intValue() == e.getKeyCode() //getExtendedKeyCode()
                 ? e.getKeyChar()
                 : converted.intValue()); // with getKeyCode() is always placing letter to upper
         Reflection.keyDown.invoke(WinRune.getInstance().gameApplet, new Object[]{evt, n});
@@ -51,7 +51,7 @@ public class KeyboardHandler implements KeyListener {
         Event evt = new Event(WinRune.getInstance().gameApplet, 402, e);
         Integer converted = KeyboardMapHelper.convert(Integer.valueOf(e.getKeyCode()));
         Integer n =
-            Integer.valueOf(converted.intValue() == e.getExtendedKeyCode()
+            Integer.valueOf(converted.intValue() == e.getKeyCode() //e.getExtendedKeyCode()
                 ? e.getKeyChar()
                 : converted.intValue()); // with getKeyCode() is always placing letter to upper
         Reflection.keyUp.invoke(WinRune.getInstance().gameApplet, new Object[]{evt, n});

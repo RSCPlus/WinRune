@@ -38,7 +38,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.function.BiConsumer;
+import java.util.Map.Entry;
 
 import javax.swing.*;
 import javax.swing.text.html.HTMLEditorKit;
@@ -87,24 +87,23 @@ public class WinRune extends Applet implements Runnable, ComponentListener {
         instance = wr;
         
         Map params = convertToKeyValuePair(args);
-        params.forEach(new BiConsumer() {
-			public void accept(Object keyObj, Object valueObj) {
-				String key = (String) keyObj;
-				String value = (String) valueObj;
-	        	if (key.equalsIgnoreCase("members")) {
-	        		instance.members = Boolean.parseBoolean(value);
-	        	} else if (key.equalsIgnoreCase("address")) {
-	        		instance.address = value;
-	        	} else if (key.equalsIgnoreCase("port")) {
-	        		instance.port = new Integer(Integer.parseInt(value));
-	        	} else if (key.equalsIgnoreCase("rsaExponent")) {
-	        		instance.rsaExponent = new BigInteger(value);
-	        	} else if (key.equalsIgnoreCase("rsaModulus")) {
-	        		instance.rsaModulus = new BigInteger(value);
-	        	}
-			}
-        	
-        });
+        Object[] paramsArray = params.entrySet().toArray();
+        for (int i = 0; i < paramsArray.length; i++) {
+        	Map.Entry entry = (Entry) paramsArray[i];
+        	String key = (String) entry.getKey();
+        	String value = (String) entry.getValue();
+        	if (key.equalsIgnoreCase("members")) {
+        		instance.members = Boolean.parseBoolean(value);
+        	} else if (key.equalsIgnoreCase("address")) {
+        		instance.address = value;
+        	} else if (key.equalsIgnoreCase("port")) {
+        		instance.port = new Integer(Integer.parseInt(value));
+        	} else if (key.equalsIgnoreCase("rsaExponent")) {
+        		instance.rsaExponent = new BigInteger(value);
+        	} else if (key.equalsIgnoreCase("rsaModulus")) {
+        		instance.rsaModulus = new BigInteger(value);
+        	}
+        }
         
         wr.run();
     }
@@ -141,7 +140,7 @@ public class WinRune extends Applet implements Runnable, ComponentListener {
         String win2 = "com.sun.java.swing.plaf.windows.WindowsClassicLookAndFeel";
         
         try {
-        	String OS = System.getProperty("os.name", "unknown").toLowerCase(Locale.ROOT);
+        	String OS = System.getProperty("os.name", "unknown").toLowerCase();
         	if (OS.contains("win")) {
         		UIManager.setLookAndFeel(win2);
         	}
@@ -168,8 +167,7 @@ public class WinRune extends Applet implements Runnable, ComponentListener {
             }
         });
         
-        final JDialog dialog = new JDialog(frame, "About");
-        dialog.setModalityType(ModalityType.APPLICATION_MODAL);
+        final JDialog dialog = new JDialog(frame, "About", false);
         dialog.setLayout(new BorderLayout());
         JPanel info = new JPanel();
         info.setLayout(new GridBagLayout());

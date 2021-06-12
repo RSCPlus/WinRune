@@ -54,6 +54,10 @@ public class KeyboardMapHelper {
 	      };
 
 	  public static Integer convert(Integer modernId) {
-	    return (Integer) map.getOrDefault(modernId, modernId);
+		  if (map.containsKey(modernId)) {
+			  return (Integer) map.get(modernId);
+		  } else {
+			  return modernId;
+		  }
 	  }
 	}
