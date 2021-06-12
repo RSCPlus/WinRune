@@ -1,0 +1,57 @@
+<project name="rune" default="run">
+	<property name="main.src.dir" value="src" />
+	<property name="main.build.dir" value="build" />
+	
+	<property name="dist.dir" value="dist" />
+	<property name="bin.dir" value="bin" />
+
+	<property name="jar.main-class" value="com.projectjava.winrune.WinRune" />
+	<property name="jar.name" value="${ant.project.name}.jar" />
+	<property name="jar.file" value="${dist.dir}/${jar.name}" />
+
+	<target name="compile">
+		<mkdir dir="${main.build.dir}" />
+		<javac source="1.4" target="1.4" srcdir="${main.src.dir}" destdir="${main.build.dir}" includeantruntime="false" encoding="UTF-8">
+		</javac>
+	</target>
+
+	<target name="dist" depends="compile">
+		<mkdir dir="${bin.dir}" />
+		<mkdir dir="${dist.dir}" />
+
+		<jar destfile="${jar.file}" basedir="${main.build.dir}">
+			<manifest>
+				<attribute name="Main-Class" value="${jar.main-class}"/>
+			</manifest>
+		</jar>
+	</target>
+
+	<target name="distrun" depends="dist">
+		<java jar="${jar.file}" dir="${bin.dir}" fork="true" >
+			<arg value="members=true" />
+            <arg value="address=10.10.200.1" />
+            <arg value="port=43594" />
+            <arg value="rsaExponent=65537" />
+            <arg value="rsaModulus=12345678" />
+        </java>
+	</target>
+	
+	<target name="run" depends="compile">
+		<java classname="${jar.main-class}" fork="true">
+			<classpath>
+				<pathelement location="${main.build.dir}"/>
+			</classpath>
+			<arg value="members=true" />
+			<arg value="address=10.10.200.1" />
+			<arg value="port=43594" />
+			<arg value="rsaExponent=65537" />
+			<arg value="rsaModulus=12345678" />
+		</java>
+	</target>
+
+	<target name="clean">
+		<delete dir="${main.build.dir}" />
+		<delete dir="${bin.dir}" />
+	</target>
+
+</project>
