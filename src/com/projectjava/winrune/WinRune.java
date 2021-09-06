@@ -21,7 +21,6 @@ package com.projectjava.winrune;
 import java.applet.Applet;
 import java.applet.AppletContext;
 import java.awt.*;
-import java.awt.Dialog.ModalityType;
 import java.awt.event.AWTEventListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -55,10 +54,10 @@ public class WinRune extends Applet implements Runnable, ComponentListener {
     private String loading, launching;
     private String client = "mudclient";
     private Map appletParams;
-    private String mudclientId = "mudclient177-deob.jar";
+    //private String mudclientId = "mudclient38-deob.jar";
     final String[] banner = { "attachmentwarning.gif", "banned.gif", "ccfraud.gif", "cheatwarn.gif", "dontbuysellcharacters.gif", "dontshare.gif", "gory.gif", "moremonsters.gif", "moretoexplore.gif", "moreweapons.gif", "newquests2.gif", "newskills.gif", "passadvice.gif", "wizard.gif" };
     
-    private CardLayout card = new CardLayout(0,(Constants.BG_IMAGE_HEIGHT - Constants.MUD_HEIGHT) / 2 + Constants.CARD_LOCATION_OFFSET);
+    private static CardLayout card;
     private JPanel bannerPanel;
     
     public JClassLoader loader = new JClassLoader();
@@ -71,6 +70,7 @@ public class WinRune extends Applet implements Runnable, ComponentListener {
     private String address;
     private Integer port;
     private BigInteger rsaExponent, rsaModulus;
+    private Integer version = 2003;
     
     public static WinRune getInstance() {
     	return instance;
@@ -82,12 +82,24 @@ public class WinRune extends Applet implements Runnable, ComponentListener {
         if (cachedir == null || assetdir == null) {
             return;
         }
-    	
-    	WinRune wr = new WinRune();
-        instance = wr;
         
         Map params = convertToKeyValuePair(args);
         Object[] paramsArray = params.entrySet().toArray();
+        int ver = 2003;
+        for (int i = 0; i < paramsArray.length; i++) {
+        	Map.Entry entry = (Entry) paramsArray[i];
+        	String key = (String) entry.getKey();
+        	String value = (String) entry.getValue();
+        	if (key.equalsIgnoreCase("version")) {
+        		ver = new Integer(Integer.parseInt(value));
+        	}
+        }
+        Constants.initialize(ver);
+    	
+    	WinRune wr = new WinRune(ver);
+        instance = wr;
+        
+        
         for (int i = 0; i < paramsArray.length; i++) {
         	Map.Entry entry = (Entry) paramsArray[i];
         	String key = (String) entry.getKey();
@@ -102,8 +114,12 @@ public class WinRune extends Applet implements Runnable, ComponentListener {
         		instance.rsaExponent = new BigInteger(value);
         	} else if (key.equalsIgnoreCase("rsaModulus")) {
         		instance.rsaModulus = new BigInteger(value);
+        	} else if (key.equalsIgnoreCase("version")) {
+        		instance.version = new Integer(Integer.parseInt(value));
         	}
         }
+        
+        card = new CardLayout(0,(Constants.BG_IMAGE_HEIGHT.get() - Constants.MUD_HEIGHT.get()) / 2 + Constants.CARD_LOCATION_OFFSET);
         
         wr.run();
     }
@@ -124,14 +140,14 @@ public class WinRune extends Applet implements Runnable, ComponentListener {
         return params;
     }
 
-    public WinRune() {
+    public WinRune(int version) {
     	loading = ("<html><body text=white><br><br><br><br><br><br><br><br><br><br><br><br><center><table bgcolor=black><tr><td><table bgcolor=#aaaaaa><tr><td bgcolor=black width=400><font face=Arial><center><h1>RuneScape</h1>By Jagex Software<h3>Checking for latest updates<br>Please wait a moment...</h3></center><font></td></tr></table></td></tr></table></center></body></html>");
         launching = ("<html><head></head><body text=white><br><br><br><br><br><br><br><br><br><br><br><br><center><table bgcolor=black><tr><td><table bgcolor=#aaaaaa><tr><td bgcolor=black width=400><font face=Arial><center><h1>RuneScape</h1>By Jagex Software<h3><br>Launching game...</h3></center></font></td></tr></table></td></tr></table></center></body></html>");
 
         ImageIcon logo = new ImageIcon(Utility.findAssetDir() + "rune.png");
         
-    	frame = new JFrame("RuneScape - by Jagex Limited");
-        frame.setContentPane(new JCustPanel());
+    	frame = new JFrame(version != 2001 ? "RuneScape - by Jagex Limited" : "RuneScape - by Jagex Software");
+        frame.setContentPane(new JCustPanel(version));
         frame.setResizable(true);
         frame.addComponentListener(this);
         frame.setIconImage(logo.getImage());
@@ -213,7 +229,7 @@ public class WinRune extends Applet implements Runnable, ComponentListener {
         frame.getContentPane().add(editorPane, BorderLayout.CENTER);
         editorPane.setBackground(new Color(0, 0, 0, 0));
 
-        frame.setSize(Constants.CLIENT_WIDTH, Constants.CLIENT_HEIGHT);
+        frame.setSize(Constants.CLIENT_WIDTH.get(), Constants.CLIENT_HEIGHT.get());
         frame.setMinimumSize(frame.getSize());
         frame.setVisible(true);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -243,11 +259,11 @@ public class WinRune extends Applet implements Runnable, ComponentListener {
 
     private void load() throws ClassNotFoundException, IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException, FileNotFoundException {
         String cachedir = Utility.findCacheDir();
-        String jarFile = cachedir + mudclientId;
+        String jarFile = cachedir + Constants.MUD_JAR.get();
         InputStream is = new FileInputStream(jarFile);
         loader.fetch(is);
         Class clazz = loader.findClass(client);
-        Reflection.Load();
+        Reflection.Load(instance.version);
         gameApplet = (Applet) clazz.newInstance();
         gameApplet.setStub(new JAppletStub());
     }
@@ -271,41 +287,43 @@ public class WinRune extends Applet implements Runnable, ComponentListener {
             }
         });
         
-        gameApplet.setSize(Constants.MUD_WIDTH, Constants.MUD_HEIGHT);
-        int bannerIdx = (int)(Math.random() * banner.length);
-        ImageIcon icon = new ImageIcon(Utility.findAssetDir() + banner[bannerIdx]);
-        final JButton button = new JButton(icon);
-        button.setPreferredSize(new Dimension(Constants.JAGEX_BANNER_WIDTH, Constants.BANNER_HEIGHT));
-        button.setSize(Constants.JAGEX_BANNER_WIDTH, Constants.BANNER_HEIGHT);
-        button.setBorderPainted(false);
-        button.setFocusPainted(false);
-        button.setRolloverIcon(icon);
-        ImageIcon real = new ImageIcon(Utility.findAssetDir() + "realbanner.gif");
-        JButton buttonReal = new JButton(real);
-        buttonReal.setPreferredSize(new Dimension(Constants.REAL_BANNER_WIDTH, Constants.BANNER_HEIGHT));
-        buttonReal.setSize(Constants.REAL_BANNER_WIDTH, Constants.BANNER_HEIGHT);
-        buttonReal.setBackground(Color.BLACK);
-        buttonReal.setBorderPainted(false);
-        buttonReal.setFocusPainted(false);
-        buttonReal.setRolloverIcon(real);
+        gameApplet.setSize(Constants.MUD_WIDTH, Constants.MUD_HEIGHT.get());
         bannerPanel = new JPanel();
-        bannerPanel.add(button);
-        bannerPanel.add(buttonReal);
-        bannerPanel.setAlignmentY(LEFT_ALIGNMENT);
-        bannerPanel.setSize(Constants.MUD_WIDTH, Constants.BANNER_HEIGHT);
-        gameApplet.setLayout(new BorderLayout());
-        gameApplet.add(bannerPanel, BorderLayout.SOUTH);
-        
-        final String basePath = Utility.findAssetDir(); 
-        Timer SimpleTimer = new Timer(5 * 60 * 1000, new ActionListener(){
-            public void actionPerformed(ActionEvent e) {
-                int bannerIdx = (int)(Math.random() * banner.length);
-                ImageIcon icon = new ImageIcon(basePath + banner[bannerIdx]);
-                button.setIcon(icon);
-                button.setRolloverIcon(icon);
-            }
-        });
-        SimpleTimer.start();
+        if (instance.version != 2001) {
+        	int bannerIdx = (int)(Math.random() * banner.length);
+            ImageIcon icon = new ImageIcon(Utility.findAssetDir() + banner[bannerIdx]);
+            final JButton button = new JButton(icon);
+            button.setPreferredSize(new Dimension(Constants.JAGEX_BANNER_WIDTH, Constants.BANNER_HEIGHT));
+            button.setSize(Constants.JAGEX_BANNER_WIDTH, Constants.BANNER_HEIGHT);
+            button.setBorderPainted(false);
+            button.setFocusPainted(false);
+            button.setRolloverIcon(icon);
+            ImageIcon real = new ImageIcon(Utility.findAssetDir() + "realbanner.gif");
+            JButton buttonReal = new JButton(real);
+            buttonReal.setPreferredSize(new Dimension(Constants.REAL_BANNER_WIDTH, Constants.BANNER_HEIGHT));
+            buttonReal.setSize(Constants.REAL_BANNER_WIDTH, Constants.BANNER_HEIGHT);
+            buttonReal.setBackground(Color.BLACK);
+            buttonReal.setBorderPainted(false);
+            buttonReal.setFocusPainted(false);
+            buttonReal.setRolloverIcon(real);
+            bannerPanel.add(button);
+            bannerPanel.add(buttonReal);
+            bannerPanel.setAlignmentY(LEFT_ALIGNMENT);
+            bannerPanel.setSize(Constants.MUD_WIDTH, Constants.BANNER_HEIGHT);
+            gameApplet.setLayout(new BorderLayout());
+            gameApplet.add(bannerPanel, BorderLayout.SOUTH);
+            
+            final String basePath = Utility.findAssetDir(); 
+            Timer SimpleTimer = new Timer(5 * 60 * 1000, new ActionListener(){
+                public void actionPerformed(ActionEvent e) {
+                    int bannerIdx = (int)(Math.random() * banner.length);
+                    ImageIcon icon = new ImageIcon(basePath + banner[bannerIdx]);
+                    button.setIcon(icon);
+                    button.setRolloverIcon(icon);
+                }
+            });
+            SimpleTimer.start();
+        }
         
         Container co = frame.getContentPane();
         frame.setLayout(card);
@@ -332,17 +350,23 @@ public class WinRune extends Applet implements Runnable, ComponentListener {
 
         gameApplet.init();
         gameApplet.start();
-        frame.setSize(Constants.CLIENT_WIDTH, Constants.CLIENT_HEIGHT + 2); // trigger a resize to readjust positions
+        frame.setSize(Constants.CLIENT_WIDTH.get(), Constants.CLIENT_HEIGHT.get() + 2); // trigger a resize to readjust positions
         try {
 			Reflection.address.set(gameApplet, address);
-			Reflection.rsaExponent.set(gameApplet, rsaExponent);
-			Reflection.rsaModulus.set(gameApplet, rsaModulus);
+			if (Reflection.rsaExponent != null) {
+				Reflection.rsaExponent.set(gameApplet, rsaExponent);
+			}
+			if (Reflection.rsaModulus != null) {
+				Reflection.rsaModulus.set(gameApplet, rsaModulus);
+			}
 			
 			Timer timer = new Timer(10000, new ActionListener() {
 				  public void actionPerformed(ActionEvent arg0) {
 				    // Code to be executed
 					  try {
-						Reflection.someBoolean.setBoolean(gameApplet, false);
+						  if (Reflection.someBoolean != null) {
+							  Reflection.someBoolean.setBoolean(gameApplet, false);  
+						  }
 						Reflection.port.set(gameApplet, port);
 					} catch (IllegalArgumentException e) {
 						// TODO Auto-generated catch block
@@ -370,7 +394,7 @@ public class WinRune extends Applet implements Runnable, ComponentListener {
 
 	public URL getCodeBase() {
 		try {
-			return new URL("http://puffin/");
+			return new URL(Constants.CODE_BASE.get());
 		} catch (MalformedURLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -426,12 +450,15 @@ public class WinRune extends Applet implements Runnable, ComponentListener {
 
 	public void componentResized(ComponentEvent e) {
 		if (gameApplet == null) return;
+		int offset = instance.version != 2001 ? 0 : 14;
 		
 		Dimension size = e.getComponent().getSize();
-		gameApplet.setSize(Constants.MUD_WIDTH, Constants.MUD_HEIGHT);
+		gameApplet.setSize(Constants.MUD_WIDTH, Constants.MUD_HEIGHT.get());
 		
-		gameApplet.setLocation((size.width - Constants.MUD_WIDTH) / 2, (size.height - Constants.MUD_HEIGHT) / 2 + Constants.GAME_LOCATION_OFFSET);
-		bannerPanel.setLocation((Constants.BG_CONTAINER_WIDTH - size.width) / 2 + Constants.BANNER_LOCATION_OFFSET_X, Constants.BANNER_LOCATION_OFFSET_Y);
+		gameApplet.setLocation((size.width - Constants.MUD_WIDTH - offset) / 2, (size.height - Constants.MUD_HEIGHT.get()) / 2 + Constants.GAME_LOCATION_OFFSET);
+		if (instance.version != 2001) {
+			bannerPanel.setLocation((Constants.BG_CONTAINER_WIDTH.get() - size.width) / 2 + Constants.BANNER_LOCATION_OFFSET_X, Constants.BANNER_LOCATION_OFFSET_Y);
+		}
 	}
 
 	public void componentShown(ComponentEvent e) {

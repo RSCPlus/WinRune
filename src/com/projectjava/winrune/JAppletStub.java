@@ -33,7 +33,7 @@ public class JAppletStub implements AppletStub {
 
 	public URL getCodeBase() {
 		try {
-			return new URL("http://puffin/");
+			return new URL(Constants.CODE_BASE.get());
 		} catch (MalformedURLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
