@@ -351,6 +351,55 @@ public class WinRune extends Applet implements Runnable, ComponentListener {
         gameApplet.init();
         gameApplet.start();
         frame.setSize(Constants.CLIENT_WIDTH.get(), Constants.CLIENT_HEIGHT.get() + 2); // trigger a resize to readjust positions
+
+
+
+        // Grab all stdout the gameApplet can produce to find when it's safe to set the port
+        PrintStream stdoutCapture = new PrintStream(new OutputStream() {
+          // Do not debug this section with System.out.println, since this captures System.out.println. You will get a Stack overflow!
+          StringBuilder sb = new StringBuilder();
+          String usingDefaultLoad = "Using default load" + System.lineSeparator();
+          int logCount = 0;
+          int logsBeforeSettingPort = 11;
+
+          public void write(int b) {
+            sb.append((char) b);
+            // Check if the StringBuilder contains a newline
+            if (!sb.toString().endsWith(System.lineSeparator())) return;
+
+            String line = sb.toString();
+
+            System.err.print(line); // We have no way to write the line back to stdout in realtime, so stderr will have to do..
+
+            if (sb.toString().equals(usingDefaultLoad) || sb.toString().contains("frames of animation")) {
+              logCount += instance.version == 2001 ? 11 : 1;
+              if (logCount == logsBeforeSettingPort) {
+                try {
+                  if (Reflection.someBoolean != null) {
+                    Reflection.someBoolean.setBoolean(gameApplet, false);  
+                  }
+                  Reflection.port.set(gameApplet, port);
+                  System.err.println("Set port: " + port + ". If I did this too soon, mud client will throw a bunch of errors. If I did this too late, client will freeze on fast login. See https://github.com/RSCPlus/WinRune/issues/6");
+                } catch (IllegalArgumentException e) {
+                  System.err.println("Illegal argument");
+                  e.printStackTrace();
+                } catch (IllegalAccessException e) {
+                  System.err.println("Illegal access");
+                  e.printStackTrace();
+                }
+                finally {
+                  // Reset stdout
+                  System.setOut(System.out);
+                }
+              }
+            }
+            // Clear the StringBuilder
+            sb = new StringBuilder();
+          }
+        });
+        System.setOut(stdoutCapture);
+
+
         try {
 			Reflection.address.set(gameApplet, address);
 			if (Reflection.rsaExponent != null) {
@@ -360,25 +409,6 @@ public class WinRune extends Applet implements Runnable, ComponentListener {
 				Reflection.rsaModulus.set(gameApplet, rsaModulus);
 			}
 			
-			Timer timer = new Timer(10000, new ActionListener() {
-				  public void actionPerformed(ActionEvent arg0) {
-				    // Code to be executed
-					  try {
-						  if (Reflection.someBoolean != null) {
-							  Reflection.someBoolean.setBoolean(gameApplet, false);  
-						  }
-						Reflection.port.set(gameApplet, port);
-					} catch (IllegalArgumentException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					} catch (IllegalAccessException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				  }
-				});
-				timer.setRepeats(false); // Only execute once
-				timer.start(); // Go go go!
 		} catch (IllegalArgumentException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
