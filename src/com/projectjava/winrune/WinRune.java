@@ -355,6 +355,7 @@ public class WinRune extends Applet implements Runnable, ComponentListener {
 
 
         // Grab all stdout the gameApplet can produce to find when it's safe to set the port
+        final PrintStream sysOut = System.out;
         PrintStream stdoutCapture = new PrintStream(new OutputStream() {
           // Do not debug this section with System.out.println, since this captures System.out.println. You will get a Stack overflow!
           StringBuilder sb = new StringBuilder();
@@ -369,7 +370,7 @@ public class WinRune extends Applet implements Runnable, ComponentListener {
 
             String line = sb.toString();
 
-            System.err.print(line); // We have no way to write the line back to stdout in realtime, so stderr will have to do..
+            sysOut.print(line);
 
             if (sb.toString().equals(usingDefaultLoad) || sb.toString().contains("frames of animation")) {
               logCount += instance.version == 2001 ? 11 : 1;
@@ -379,7 +380,7 @@ public class WinRune extends Applet implements Runnable, ComponentListener {
                     Reflection.someBoolean.setBoolean(gameApplet, false);  
                   }
                   Reflection.port.set(gameApplet, port);
-                  System.err.println("Set port: " + port + ". If I did this too soon, mud client will throw a bunch of errors. If I did this too late, client will freeze on fast login. See https://github.com/RSCPlus/WinRune/issues/6");
+                  sysOut.println("Set port: " + port + ". If I did this too soon, mud client will throw a bunch of errors. If I did this too late, client will freeze on fast login. See https://github.com/RSCPlus/WinRune/issues/6");
                 } catch (IllegalArgumentException e) {
                   System.err.println("Illegal argument");
                   e.printStackTrace();
