@@ -359,14 +359,14 @@ public class WinRune extends Applet implements Runnable, ComponentListener {
         PrintStream stdoutCapture = new PrintStream(new OutputStream() {
           // Do not debug this section with System.out.println, since this captures System.out.println. You will get a Stack overflow!
           StringBuilder sb = new StringBuilder();
-          String usingDefaultLoad = "Using default load" + System.lineSeparator();
+          String usingDefaultLoad = "Using default load" + System.getProperty("line.separator");
           int logCount = 0;
           int logsBeforeSettingPort = 11;
 
           public void write(int b) {
             sb.append((char) b);
             // Check if the StringBuilder contains a newline
-            if (!sb.toString().endsWith(System.lineSeparator())) return;
+            if (!sb.toString().endsWith(System.getProperty("line.separator"))) return;
 
             String line = sb.toString();
 
